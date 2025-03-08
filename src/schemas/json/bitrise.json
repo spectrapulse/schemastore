@@ -14,16 +14,11 @@
         "description": {
           "type": "string"
         },
+        "status_report_name": {
+          "$ref": "#/definitions/StatusReportNameModel"
+        },
         "envs": {
-          "items": {
-            "patternProperties": {
-              ".*": {
-                "additionalProperties": true
-              }
-            },
-            "type": "object"
-          },
-          "type": "array"
+          "$ref": "#/definitions/EnvModel"
         }
       },
       "additionalProperties": false,
@@ -51,7 +46,10 @@
       "type": "object"
     },
     "BitriseDataModel": {
-      "required": ["format_version"],
+      "anyOf": [
+        { "required": ["format_version"] },
+        { "required": ["include"] }
+      ],
       "properties": {
         "format_version": {
           "type": "string"
@@ -70,6 +68,22 @@
         },
         "description": {
           "type": "string"
+        },
+        "services": {
+          "patternProperties": {
+            ".*": {
+              "$ref": "#/definitions/ContainerModel"
+            }
+          },
+          "type": "object"
+        },
+        "containers": {
+          "patternProperties": {
+            ".*": {
+              "$ref": "#/definitions/ContainerModel"
+            }
+          },
+          "type": "object"
         },
         "app": {
           "$ref": "#/definitions/AppModel"
@@ -111,6 +125,20 @@
             }
           },
           "type": "object"
+        },
+        "step_bundles": {
+          "patternProperties": {
+            ".*": {
+              "$ref": "#/definitions/StepBundleModel"
+            }
+          },
+          "type": "object"
+        },
+        "include": {
+          "items": {
+            "$ref": "#/definitions/IncludeItemModel"
+          },
+          "type": "array"
         }
       },
       "additionalProperties": false,
@@ -131,6 +159,31 @@
     "CheckOnlyDepModel": {
       "properties": {
         "name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ContainerModel": {
+      "required": ["image"],
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "credentials": {
+          "$ref": "#/definitions/DockerCredentialModel"
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "envs": {
+          "$ref": "#/definitions/EnvModel"
+        },
+        "options": {
           "type": "string"
         }
       },
@@ -161,6 +214,33 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "DockerCredentialModel": {
+      "required": ["username", "password"],
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "server": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "EnvModel": {
+      "items": {
+        "patternProperties": {
+          ".*": {
+            "additionalProperties": true
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
     "GoStepToolkitModel": {
       "required": ["package_name"],
       "properties": {
@@ -182,6 +262,12 @@
         "description": {
           "type": "string"
         },
+        "triggers": {
+          "$ref": "#/definitions/TriggersModel"
+        },
+        "status_report_name": {
+          "$ref": "#/definitions/StatusReportNameModel"
+        },
         "stages": {
           "items": {
             "patternProperties": {
@@ -192,6 +278,49 @@
             "type": "object"
           },
           "type": "array"
+        },
+        "workflows": {
+          "patternProperties": {
+            ".*": {
+              "$ref": "#/definitions/GraphPipelineWorkflowModel"
+            }
+          },
+          "type": "object"
+        },
+        "priority": {
+          "$ref": "#/definitions/PriorityModel"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "GraphPipelineWorkflowModel": {
+      "properties": {
+        "depends_on": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "abort_on_fail": {
+          "type": "boolean"
+        },
+        "should_always_run": {
+          "type": "string",
+          "enum": ["off", "workflow"]
+        },
+        "run_if": {
+          "$ref": "#/definitions/GraphPipelineWorkflowRunIfModel"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "GraphPipelineWorkflowRunIfModel": {
+      "required": ["expression"],
+      "properties": {
+        "expression": {
+          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -228,6 +357,12 @@
       },
       "additionalProperties": false,
       "type": "object"
+    },
+    "StatusReportNameModel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-zA-Z0-9,./():\\-_ <>\\[\\]\\|]*$"
     },
     "StepModel": {
       "properties": {
@@ -315,26 +450,136 @@
           "type": "object"
         },
         "inputs": {
+          "$ref": "#/definitions/EnvModel"
+        },
+        "outputs": {
+          "$ref": "#/definitions/EnvModel"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TriggersModel": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "push": {
           "items": {
-            "patternProperties": {
-              ".*": {
-                "additionalProperties": true
-              }
-            },
-            "type": "object"
+            "$ref": "#/definitions/PushTriggerModel"
           },
           "type": "array"
         },
-        "outputs": {
+        "pull_request": {
           "items": {
-            "patternProperties": {
-              ".*": {
-                "additionalProperties": true
-              }
-            },
-            "type": "object"
+            "$ref": "#/definitions/PullrequestTriggerModel"
           },
           "type": "array"
+        },
+        "tag": {
+          "items": {
+            "$ref": "#/definitions/TagTriggerModel"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "PushTriggerModel": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "priority": {
+          "$ref": "#/definitions/PriorityModel"
+        },
+        "branch": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        },
+        "commit_message": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        },
+        "changed_files": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "PullrequestTriggerModel": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "priority": {
+          "$ref": "#/definitions/PriorityModel"
+        },
+        "draft_enabled": {
+          "type": "boolean"
+        },
+        "source_branch": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        },
+        "target_branch": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        },
+        "label": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        },
+        "comment": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        },
+        "commit_message": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        },
+        "changed_files": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TagTriggerModel": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "priority": {
+          "$ref": "#/definitions/PriorityModel"
+        },
+        "name": {
+          "oneOf": [
+            { "$ref": "#/definitions/TriggerMapItemModelRegexCondition" },
+            { "type": "string" }
+          ]
         }
       },
       "additionalProperties": false,
@@ -453,6 +698,34 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "WithModel": {
+      "required": ["steps"],
+      "properties": {
+        "container": {
+          "type": "string"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "steps": {
+          "items": {
+            "patternProperties": {
+              "^(?!bundle::)(?!with$).*": {
+                "$ref": "#/definitions/StepModel"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "WorkflowStageConfigModel": {
       "properties": {
         "run_if": {
@@ -473,6 +746,12 @@
         "description": {
           "type": "string"
         },
+        "triggers": {
+          "$ref": "#/definitions/TriggersModel"
+        },
+        "status_report_name": {
+          "$ref": "#/definitions/StatusReportNameModel"
+        },
         "before_run": {
           "items": {
             "type": "string"
@@ -486,26 +765,28 @@
           "type": "array"
         },
         "envs": {
-          "items": {
-            "patternProperties": {
-              ".*": {
-                "additionalProperties": true
-              }
-            },
-            "type": "object"
-          },
-          "type": "array"
+          "$ref": "#/definitions/EnvModel"
         },
         "steps": {
           "items": {
             "patternProperties": {
-              ".*": {
+              "^bundle::.+": {
+                "$ref": "#/definitions/StepBundleOverrideModel"
+              },
+              "^with$": {
+                "$ref": "#/definitions/WithModel"
+              },
+              "^(?!bundle::)(?!with$).*": {
                 "$ref": "#/definitions/StepModel"
               }
             },
+            "additionalProperties": false,
             "type": "object"
           },
           "type": "array"
+        },
+        "priority": {
+          "$ref": "#/definitions/PriorityModel"
         },
         "meta": {
           "patternProperties": {
@@ -518,6 +799,91 @@
       },
       "additionalProperties": false,
       "type": "object"
+    },
+    "StepBundleModel": {
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "envs": {
+          "$ref": "#/definitions/EnvModel"
+        },
+        "inputs": {
+          "$ref": "#/definitions/EnvModel"
+        },
+        "steps": {
+          "items": {
+            "patternProperties": {
+              "^bundle::.+": {
+                "$ref": "#/definitions/StepBundleOverrideModel"
+              },
+              "^(?!bundle::)(?!with$).*": {
+                "$ref": "#/definitions/StepModel"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "StepBundleOverrideModel": {
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "envs": {
+          "$ref": "#/definitions/EnvModel"
+        },
+        "inputs": {
+          "$ref": "#/definitions/EnvModel"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "IncludeItemModel": {
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "PriorityModel": {
+      "type": "integer",
+      "maximum": 100,
+      "minimum": -100
     }
   }
 }

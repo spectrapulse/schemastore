@@ -440,12 +440,17 @@
         },
         "CompilationDatabase": {
           "description": "A directory to search for compilation database\nhttps://clangd.llvm.org/config.html#compilationdatabase",
+          "default": "Ancestors",
           "oneOf": [
             {
               "$ref": "https://json.schemastore.org/base.json#/definitions/path"
             },
             {
-              "enum": ["Ancestors", "None"]
+              "enum": ["Ancestors", "None"],
+              "enumDescriptions": [
+                "Search all parent directories.",
+                "Do not use a compilation database, just default flags."
+              ]
             }
           ]
         },
@@ -526,6 +531,20 @@
           "items": {
             "type": "string"
           }
+        },
+        "QuotedHeaders": {
+          "description": "A list of regexes. Headers whose path matches one of these regexes are inserted using \"\" syntax\nhttps://clangd.llvm.org/config#quotedheaders",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "AngledHeaders": {
+          "description": "A list of regexes. Headers whose path matches one of these regexes are inserted using <> syntax.\nhttps://clangd.llvm.org/config#angledheaders",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -575,6 +594,17 @@
                   "readability-identifier-naming.VariableCase": "CamelCase"
                 }
               ]
+            },
+            "FastCheckFilter": {
+              "description": "Whether to run clang-tidy checks that may slow down clangd.\nhttps://clangd.llvm.org/config.html#fastcheckfilter",
+              "type": "string",
+              "default": "Strict",
+              "enum": ["Strict", "Loose", "None"],
+              "enumDescriptions": [
+                "Run only checks measured to be fast. This excludes recently-added checks that we have not timed yet.",
+                "Run checks unless they are known to be slow.",
+                "Run checks regardless of their speed."
+              ]
             }
           },
           "additionalProperties": false
@@ -596,6 +626,11 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "AnalyzeAngledIncludes": {
+              "description": "Enables/disables detection of unused angled includes that are not from the Standard Library. Disabled by default to avoid false-positives caused by umbrella headers\nhttps://clangd.llvm.org/config.html#analyzeangledincludes",
+              "type": "boolean",
+              "default": false
             }
           }
         },
@@ -616,6 +651,18 @@
         "AllScopes": {
           "description": "Whether to include suggestions from scopes that are not visible\nhttps://clangd.llvm.org/config.html#allscopes",
           "type": "boolean"
+        },
+        "ArgumentLists": {
+          "description": "Determines what is inserted in argument list position when completing a call to a function\nhttps://clangd.llvm.org/config#argumentlists",
+          "type": "string",
+          "enum": ["None", "OpenDelimiter", "Delimiters", "FullPlaceholders"],
+          "enumDescriptions": [
+            "`fo^` completes to `foo`",
+            "`fo^` completes to `foo(^`",
+            "`fo^` completes to `foo(^)`",
+            "`fo^` completes to `foo(int arg)`, with `int arg` selected"
+          ],
+          "default": "FullPlaceholders"
         }
       },
       "additionalProperties": false
@@ -643,6 +690,10 @@
         },
         "BlockEnd": {
           "description": "A boolean that enables/disables inlay-hints for block end comments\nhttps://clangd.llvm.org/config.html#blockend",
+          "type": "boolean"
+        },
+        "DefaultArguments": {
+          "description": "A boolean that enables/disables inlay hints for default arguments\nhttps://clangd.llvm.org/config#defaultarguments",
           "type": "boolean"
         },
         "TypeNameLimit": {

@@ -1,4 +1,4 @@
-name: 'Codeowners merging'
+name: 'Maintenance: Codeowners Detection and Mention'
 on:
   pull_request_target: { types: [opened] }
   issue_comment: { types: [created] }
@@ -8,10 +8,11 @@ jobs:
   codeowners-merge:
     if: "github.repository == 'SchemaStore/schemastore' && github.event.pull_request.draft == false"
     runs-on: ubuntu-latest
+    permissions: 'write-all'
     steps:
       - uses: 'actions/checkout@v4'
-      - name: 'Run Codeowners merge check'
-        uses: 'OSS-Docs-Tools/code-owner-self-merge@7c66472de8c7189f4ab4110e9fcc3e7944cad5f6'
+      - name: 'Run Codeowners check'
+        uses: 'OSS-Docs-Tools/code-owner-self-merge@d085674edba4207f478ff08ff91c7ecf9cbaf767'
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:

@@ -1,23 +1,10 @@
-/** @type {unknown} */
-let prettierPluginSortJson
-try {
-  // When running scripts locally (through npm-run-script), the relative path of the plugin
-  // must be specified since 'require.resolve' will not find it by itself in subdirectory 'src'.
-  prettierPluginSortJson = require.resolve(
-    './src/node_modules/prettier-plugin-sort-json',
-  )
-} catch (err) {
-  // In pre-commit CI, 'prettier-plugin-sort-json' is installed to some directory (which is in $NODE_PATH).
-  // As as result, simply require.resolve to find the full path to the dependency.
-  prettierPluginSortJson = require.resolve('prettier-plugin-sort-json')
-}
-if (!prettierPluginSortJson) {
-  throw new Error(`Failed to import plugin: 'prettier-plugin-sort-json'`)
-}
-
-/** @type {import('./src/node_modules/prettier').Config} */
+/** @type {import('prettier').Config} */
 module.exports = {
-  plugins: [prettierPluginSortJson],
+  // pre-commit.ci fails without `require.resolve()`.
+  plugins: [
+    require.resolve('prettier-plugin-sort-json'),
+    require.resolve('prettier-plugin-toml'),
+  ],
   semi: false,
   singleQuote: true,
   trailingComma: 'all',
@@ -27,6 +14,12 @@ module.exports = {
     '/^\\d+/': 'none',
   }),
   overrides: [
+    {
+      files: '*.jsonc',
+      options: {
+        trailingComma: 'none',
+      },
+    },
     {
       files: 'src/api/json/catalog.json',
       options: {
@@ -39,19 +32,20 @@ module.exports = {
           fileMatch: null,
           url: null,
           versions: null,
+          // Set to "none" to prevent lexical sorting of version strings.
           '/^[^\\d+]/': 'none',
           '/^\\d+/': 'none',
         }),
       },
     },
     {
-      files: 'src/schema-validation.json',
+      files: 'src/schema-validation.jsonc',
       options: {
-        $schema: null,
-        $id: null,
-        $comment: null,
         jsonRecursiveSort: true,
         jsonSortOrder: JSON.stringify({
+          $schema: null,
+          $id: null,
+          $comment: null,
           ajvNotStrictMode: null,
           fileMatchConflict: null,
           highSchemaVersion: null,
@@ -59,8 +53,11 @@ module.exports = {
           skiptest: null,
           catalogEntryNoLintNameOrDescription: null,
           options: null,
-          '/^[^\\d+]/': 'lexical',
-          '/^\\d+/': 'numeric',
+          externalSchema: null,
+          unknownKeywords: null,
+          unknownFormat: null,
+          '/^[^\\d+]/': null,
+          '/^\\d+/': null,
         }),
       },
     },
@@ -89,9 +86,22 @@ module.exports = {
           if: null,
           then: null,
           else: null,
-          '/^[^\\d+]/': 'none',
-          '/^\\d+/': 'none',
         }),
+      },
+    },
+    {
+      files: 'src/test/bun-lock/bun.lock.json',
+      options: {
+        jsonRecursiveSort: false,
+        jsonSortOrder: JSON.stringify({
+          '.': 'none',
+          '*': 'none',
+          lockfileVersion: 'none',
+          workspaces: 'none',
+          '/^\\$.*/': null,
+        }),
+        bracketSameLine: true,
+        printWidth: 100000000000,
       },
     },
   ],

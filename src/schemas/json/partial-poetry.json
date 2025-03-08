@@ -147,7 +147,7 @@
               "format": "uri"
             },
             {
-              "pattern": "^([A-Za-z0-9\\-]+@|https://|http://)[A-Za-z][A-Za-z0-9+.-]*(:|/)[A-Za-z0-9\\-\\.]+/[A-Za-z0-9\\-_\\.]+\\.git$"
+              "pattern": "^([A-Za-z0-9\\-]+@|https://|http://)[A-Za-z][A-Za-z0-9+.-]*(:|/)[A-Za-z0-9\\-\\.]+(/[A-Za-z0-9\\-_\\.]+)+\\.git$"
             }
           ]
         },
@@ -509,6 +509,10 @@
           },
           "format": {
             "$ref": "#/definitions/poetry-package-formats"
+          },
+          "to": {
+            "type": "string",
+            "description": "Where the package should be installed in the final distribution."
           }
         }
       }
@@ -544,7 +548,6 @@
     "dependencies": {
       "type": "object",
       "description": "This is a hash of package name (keys) and version constraints (values) that are required to run this package.",
-      "required": ["python"],
       "properties": {
         "python": {
           "$ref": "#/definitions/poetry-dependency",
@@ -552,11 +555,10 @@
           "description": "The Python versions the package is compatible with."
         }
       },
-      "patternProperties": {
-        "^(?!python$)[a-zA-Z-_.0-9]+$": {
-          "$ref": "#/definitions/poetry-dependency-any"
-        }
-      }
+      "additionalProperties": {
+        "$ref": "#/definitions/poetry-dependency-any"
+      },
+      "x-tombi-table-keys-order": "ascending"
     },
     "dev-dependencies": {
       "type": "object",
@@ -565,7 +567,8 @@
         "^[a-zA-Z-_.0-9]+$": {
           "$ref": "#/definitions/poetry-dependency-any"
         }
-      }
+      },
+      "x-tombi-table-keys-order": "ascending"
     },
     "extras": {
       "type": "object",
@@ -576,7 +579,8 @@
             "type": "string"
           }
         }
-      }
+      },
+      "x-tombi-table-keys-order": "ascending"
     },
     "group": {
       "type": "object",
@@ -599,12 +603,14 @@
                   "$ref": "#/definitions/poetry-dependency-any"
                 }
               },
-              "additionalProperties": false
+              "additionalProperties": false,
+              "x-tombi-table-keys-order": "ascending"
             }
           },
           "additionalProperties": false
         }
-      }
+      },
+      "x-tombi-table-keys-order": "ascending"
     },
     "build": {
       "$ref": "#/definitions/poetry-build-section"
@@ -623,12 +629,28 @@
             }
           ]
         }
-      }
+      },
+      "x-tombi-table-keys-order": "ascending"
     },
     "plugins": {
       "type": "object",
       "description": "A hash of hashes representing plugins",
       "patternProperties": {
+        "^dotenv$": {
+          "type": "object",
+          "description": "Configuration for the poetry-plugin-dotenv",
+          "additionalProperties": false,
+          "properties": {
+            "ignore": {
+              "type": "string",
+              "description": "Flag that prevents the plugin from loading the dotenv file."
+            },
+            "location": {
+              "type": "string",
+              "description": "Path to the dotenv file. It can be both absolute or relative."
+            }
+          }
+        },
         "^[a-zA-Z-_.0-9]+$": {
           "type": "object",
           "patternProperties": {
@@ -637,7 +659,8 @@
             }
           }
         }
-      }
+      },
+      "x-tombi-table-keys-order": "ascending"
     },
     "urls": {
       "type": "object",
@@ -646,28 +669,47 @@
           "type": "string",
           "description": "The full url of the custom url."
         }
-      }
-    }
-  },
-  "if": {
-    "properties": {
-      "package-mode": { "const": true }
-    }
-  },
-  "then": {
-    "required": ["name", "version", "description", "authors"],
-    "properties": {
-      "name": {
-        "$ref": "#/definitions/poetry-name"
       },
-      "version": {
-        "$ref": "#/definitions/poetry-version"
-      },
-      "description": {
-        "$ref": "#/definitions/poetry-description"
-      },
-      "authors": {
-        "$ref": "#/definitions/poetry-authors"
+      "x-tombi-table-keys-order": "ascending"
+    },
+    "source": {
+      "$comment": "The unique 'pypi' source constraint is not implemented yet.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the source."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The url of the source."
+          },
+          "priority": {
+            "enum": [
+              "default",
+              "primary",
+              "secondary",
+              "supplemental",
+              "explicit"
+            ],
+            "description": "The priority of the source."
+          }
+        },
+        "if": {
+          "properties": { "name": { "const": "pypi" } }
+        },
+        "then": {
+          "propertyNames": { "not": { "const": "url" } }
+        },
+        "else": {
+          "required": ["url"],
+          "properties": { "url": true }
+        }
       }
     }
   }
